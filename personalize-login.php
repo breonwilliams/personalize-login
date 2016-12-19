@@ -816,3 +816,116 @@ $personalize_login_pages_plugin = new Personalize_Login_Plugin();
 
 // Create the custom pages at plugin activation
 register_activation_hook( __FILE__, array( 'Personalize_Login_Plugin', 'plugin_activated' ) );
+
+// Render account information
+
+add_shortcode('account-info', 'render_account_info');
+function render_account_info( $args ) {
+    ob_start();
+    ?>
+    <?php global $user_ID, $user_identity; get_currentuserinfo(); if (!$user_ID) { ?>
+        <?php if ( true ) : ?>
+            <div class="login-form-container">
+                <?php if ( $attributes['show_title'] ) : ?>
+                    <h2><?php _e( 'Sign In', 'personalize-login' ); ?></h2>
+                <?php endif; ?>
+
+                <!-- Show errors if there are any -->
+                <?php if ( count( $attributes['errors'] ) > 0 ) : ?>
+                    <?php foreach ( $attributes['errors'] as $error ) : ?>
+                        <p class="login-error">
+                            <?php echo $error; ?>
+                        </p>
+                    <?php endforeach; ?>
+                <?php endif; ?>
+
+                <!-- Show logged out message if user just logged out -->
+                <?php if ( $attributes['logged_out'] ) : ?>
+                    <p class="login-info">
+                        <?php _e( 'You have signed out. Would you like to sign in again?', 'personalize-login' ); ?>
+                    </p>
+                <?php endif; ?>
+
+                <?php if ( $attributes['registered'] ) : ?>
+                    <p class="login-info">
+                        <?php
+                        printf(
+                            __( 'You have successfully registered to <strong>%s</strong>. We have emailed your password to the email address you entered.', 'personalize-login' ),
+                            get_bloginfo( 'name' )
+                        );
+                        ?>
+                    </p>
+                <?php endif; ?>
+
+                <?php if ( $attributes['lost_password_sent'] ) : ?>
+                    <p class="login-info">
+                        <?php _e( 'Check your email for a link to reset your password.', 'personalize-login' ); ?>
+                    </p>
+                <?php endif; ?>
+
+                <?php if ( $attributes['password_updated'] ) : ?>
+                    <p class="login-info">
+                        <?php _e( 'Your password has been changed. You can sign in now.', 'personalize-login' ); ?>
+                    </p>
+                <?php endif; ?>
+
+                <?php
+                wp_login_form(
+                    array(
+                        'label_username' => __( 'Email', 'personalize-login' ),
+                        'label_log_in' => __( 'Sign In', 'personalize-login' ),
+                        'redirect' => $attributes['redirect'],
+                    )
+                );
+                ?>
+
+                <a class="forgot-password" href="<?php echo wp_lostpassword_url(); ?>">
+                    <?php _e( 'Forgot your password?', 'personalize-login' ); ?>
+                </a>
+
+            </div>
+        <?php else : ?>
+            <div class="login-form-container">
+                <form method="post" action="<?php echo wp_login_url(); ?>">
+                    <p class="login-username">
+                        <label for="user_login"><?php _e( 'Email', 'personalize-login' ); ?></label>
+                        <input type="text" name="log" id="user_login">
+                    </p>
+                    <p class="login-password">
+                        <label for="user_pass"><?php _e( 'Password', 'personalize-login' ); ?></label>
+                        <input type="password" name="pwd" id="user_pass">
+                    </p>
+                    <p class="login-submit">
+                        <input type="submit" value="<?php _e( 'Sign In', 'personalize-login' ); ?>">
+                    </p>
+                </form>
+            </div>
+        <?php endif; ?>
+
+
+
+    <?php } else { // is logged in ?>
+
+        <div class="sidebox">
+            <h3>Welcome, <?php echo $user_identity; ?></h3>
+            <div class="usericon">
+                <?php global $userdata; get_currentuserinfo(); echo get_avatar($userdata->ID, 60); ?>
+
+            </div>
+            <div class="userinfo">
+                <p>You&rsquo;re logged in as <strong><?php echo $user_identity; ?></strong></p>
+                <p>
+                    <a href="<?php echo wp_logout_url('index.php'); ?>">Log out</a> |
+                    <?php if (current_user_can('manage_options')) {
+                        echo '<a href="' . admin_url() . '">' . __('Admin') . '</a>'; } else {
+                        echo '<a href="' . admin_url() . 'profile.php">' . __('Profile') . '</a>'; } ?>
+
+                </p>
+            </div>
+        </div>
+
+    <?php } ?>
+    <?php
+
+    return ob_get_clean();
+}
